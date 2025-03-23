@@ -1,2 +1,1 @@
 # bracket-app
-Bracket app
