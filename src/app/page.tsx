@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './things.module.css';
 
 interface Team {
@@ -98,6 +98,54 @@ export default function DoubleElimination() {
 
     setIsInitialized(false);
   };
+
+  const exportData = () => {
+    const tournamentData = {
+      teams,
+      matches,
+      isInitialized
+    };
+    
+    const dataStr = JSON.stringify(tournamentData, null, 2);
+    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+    
+    const exportFileDefaultName = `bracket-${new Date().toISOString().slice(0, 10)}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+  
+  const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const fileReader = new FileReader();
+    
+    fileReader.onload = (e) => {
+      try {
+        if (e.target?.result) {
+          const importedData = JSON.parse(e.target.result as string);
+          
+          if (!importedData.teams || !importedData.matches) {
+            alert('Invalid bracket data format');
+            return;
+          }
+          
+          setTeams(importedData.teams);
+          setMatches(importedData.matches);
+          setIsInitialized(true);
+        }
+      } catch (error) {
+        console.error('Error importing data:', error);
+        alert('Failed to import bracket data');
+      }
+    };
+    
+    if (event.target.files && event.target.files[0]) {
+      fileReader.readAsText(event.target.files[0]);
+    }
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateMatch = (matchId: string, winnerId: number | null) => {
     setMatches(prevMatches => {
@@ -249,16 +297,23 @@ export default function DoubleElimination() {
   return (
     <div className={styles.container}>
       <div className={styles.controls}>
-        <button className={styles.randomizeButton} onClick={randomizeBracket}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+        <button 
+          className="px-4 py-2 bg-blue-500 text-white font-bold text-sm uppercase tracking-wider rounded-md shadow-md flex items-center justify-center transition-all duration-200 hover:bg-blue-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm" 
+          onClick={randomizeBracket}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
             <polyline points="23 4 23 10 17 10"></polyline>
             <polyline points="1 20 1 14 7 14"></polyline>
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
           </svg>
           Randomize Bracket
         </button>
-        <button className={styles.resetButton} onClick={resetTournament}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+        
+        <button 
+          className="px-4 py-2 bg-red-500 text-white font-bold text-sm uppercase tracking-wider rounded-md shadow-md flex items-center justify-center transition-all duration-200 hover:bg-red-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm" 
+          onClick={resetTournament}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
             <path d="M3 2v6h6"></path>
             <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
             <path d="M21 22v-6h-6"></path>
@@ -266,6 +321,39 @@ export default function DoubleElimination() {
           </svg>
           Reset Tournament
         </button>
+        
+        {/* Export button with Tailwind classes */}
+        <button 
+          className="px-4 py-2 bg-green-500 text-white font-bold text-sm uppercase tracking-wider rounded-md shadow-md flex items-center justify-center transition-all duration-200 hover:bg-green-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm" 
+          onClick={exportData}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export Bracket
+        </button>
+        
+        <button 
+          className="px-4 py-2 bg-yellow-500 text-white font-bold text-sm uppercase tracking-wider rounded-md shadow-md flex items-center justify-center transition-all duration-200 hover:bg-yellow-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm" 
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Import Bracket
+        </button>
+        
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={importData}
+          accept=".json"
+          className="hidden"
+        />
       </div>
 
       <div className={styles.teamList}>
